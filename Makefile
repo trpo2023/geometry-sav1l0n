@@ -1,2 +1,2 @@
-hello: main.c
-	gcc -Wall -Werror -o  main main.c
+hello: main.c main
+	gcc -Wall -Werror -o run main.c && ./main && rm -f run
