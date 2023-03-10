@@ -241,7 +241,7 @@ int main()
         
 
         if (error == 0) {
-            printf("No Errors! GOOD JOB<3\n");
+            printf("No Errors!\n");
         }
 
         error = 0;
