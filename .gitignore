@@ -1,4 +1,4 @@
 main
-geometry.txt
+input.wkt
 .vscode/
 *.o
