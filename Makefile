@@ -1,45 +1,64 @@
-CC = g++
-TARGET = main
+APP_NAME = geometry
+LIB_NAME = libgeometry
+TEST_NAME = main_test
 
-# .cpp files paths
-PATH_MAIN = ./src/geometry/
-PATH_LIB = ./src/libgeometry/
+TESTFLAGS = -I thirdparty
+CFLAGS = -Wall -Werror -I src
+DEPSFLAGS = -MMD
+CC = gcc
 
-# .o files paths
-PATH_OBJ_MAIN = ./obj/src/geometry/
-PATH_OBJ_LIB = ./obj/src/libgeometry/
+BIN_DIR = bin
+OBJ_DIR = obj
+SRC_DIR = src
+TEST_DIR = test
 
-# executable file path
-PATH_BIN = ./bin/
+APP_PATH = $(BIN_DIR)/$(APP_NAME)
+LIB_PATH = $(OBJ_DIR)/$(SRC_DIR)/$(LIB_NAME)/$(LIB_NAME).a
+TEST_PATH = $(BIN_DIR)/$(TEST_NAME)
 
-# libs files
-SRC_LIB = $(wildcard $(PATH_LIB)*.cpp)
-OBJ_LIB = $(patsubst $(PATH_LIB)%.cpp, $(PATH_OBJ_LIB)%.o, $(SRC_LIB))
+APP_SOURCES = $(wildcard $(SRC_DIR)/$(APP_NAME)/*.c)
+APP_OBJECTS = $(patsubst %.c, $(OBJ_DIR)/%.o, $(APP_SOURCES))
 
-# main files
-SRC_MAIN = $(wildcard $(PATH_MAIN)*.cpp)
-OBJ_MAIN = $(patsubst $(PATH_MAIN)%.cpp, $(PATH_OBJ_MAIN)%.o, $(SRC_MAIN))
+LIB_SOURCES = $(wildcard $(SRC_DIR)/$(LIB_NAME)/*.c)
+LIB_OBJECTS = $(patsubst %.c, $(OBJ_DIR)/%.o, $(LIB_SOURCES))
 
+TEST_SOURCES = $(wildcard $(TEST_DIR)/*.c)
+TEST_OBJECTS = $(patsubst %.c, $(OBJ_DIR)/%.o, $(TEST_SOURCES))
 
-# final
-$(PATH_BIN)$(TARGET) : $(OBJ_LIB) $(OBJ_MAIN)
-	$(CC) $(OBJ_LIB) $(OBJ_MAIN) -o $(PATH_BIN)$(TARGET)
+DEPS = $(APP_OBJECTS:.o=.d) $(LIB_OBJECTS:.o=.d) $(TEST_OBJECTS:.o=.d)
 
-# libs
-$(PATH_OBJ_LIB)%.o : $(PATH_LIB)%.cpp
-	$(CC) -c $< -o $@
+.PHONY: all test clean
+all: $(APP_PATH)
 
-# main
-$(PATH_OBJ_MAIN)%.o : $(PATH_MAIN)%.cpp
-	$(CC) -I src/libgeometry/headers -c $< -o $@
+-include $(DEPS)
 
+# BUILD
+$(APP_PATH): $(APP_OBJECTS) $(LIB_PATH)
+	$(CC) $(CFLAGS) -o $@ $^ -lm
 
-clear :
-	rm $(OBJ_MAIN) $(OBJ_LIB) $(PATH_BIN)$(TARGET)
+$(LIB_PATH): $(LIB_OBJECTS)
+	ar rcs $@ $^
 
-run : $(PATH_BIN)$(TARGET)
-	$(PATH_BIN)$(TARGET)
+$(OBJ_DIR)/%.o: %.c
+	$(CC) $(CFLAGS) $(DEPSFLAGS) -c -o $@ $< -lm
 
-drun : $(PATH_BIN)$(TARGET)
-	$(PATH_BIN)$(TARGET)
-	rm $(OBJ_MAIN) $(OBJ_LIB) $(PATH_BIN)$(TARGET)
+# TEST
+test: $(LIB_PATH) $(TEST_PATH)
+	$(TEST_PATH)
+
+$(TEST_PATH): $(TEST_OBJECTS) $(LIB_PATH)
+	$(CC) $(TESTFLAGS) $(CFLAGS) $(DEPSFLAGS) -o $@ $^ -lm
+
+$(OBJ_DIR)/test/main.o: test/main.c
+	$(CC) $(TESTFLAGS) $(CFLAGS) $(DEPSFLAGS) -c -o $@ $<
+
+$(OBJ_DIR)/test/tests.o: test/tests.c
+	$(CC) $(TESTFLAGS) $(CFLAGS) $(DEPSFLAGS) -c -o $@ $<
+
+# RUN
+run: all
+	$(APP_PATH) $(BIN_DIR)/test.txt
+
+# CLEAN
+clean:
+	$(RM) $(APP_PATH) $(TEST_PATH) $(OBJ_DIR)/*/*/*.[aod] $(OBJ_DIR)/test/*.[aod]
